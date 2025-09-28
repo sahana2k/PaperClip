@@ -1,5 +1,6 @@
-📎 Paperclip: Your AI-Powered Research Companion
-Paperclip is an inclusive, AI-powered platform designed to lower barriers for students and accelerate workflows for seasoned researchers. By combining domain discovery, mentorship guidance, and access to curated datasets and models, it empowers users to focus on innovation instead of repetitive setup tasks.
+📎 Paperclip: Your all-in one Research Companion 
+
+Paperclip is an inclusive, AI-powered platform designed to lower barriers for students and accelerate workflows for seasoned researchers. For students, it suggests domains, professors, and simplified papers with accessible starter projects. For researchers, it curates datasets, pretrained models, and GitHub code, generating ready-to-run pipelines. The result? Faster, more inclusive research — and a sustainable future by saving compute, time, and energy.
 
 ✨ Key Features
 Domain Discovery: Helps students find specific research sub-fields within a broad topic.
@@ -11,8 +12,6 @@ Professor Finder: Locates professors at a specific university based on their res
 Dataset & Model Hub: Discovers relevant datasets and pre-trained models from Hugging Face and GitHub.
 
 Starter Code Generator: Creates boilerplate Python code in a Colab-style format to kickstart projects.
-
-Sustainability Calculator: Estimates the computational and carbon savings from reusing pre-trained models.
 
 Multilingual Support: Translate paper summaries and chat responses into various languages.
 
@@ -96,4 +95,5 @@ Alternatively, use npx (comes with Node.js):
 Bash
 
 npx live-server
+
 Your browser will open to the Paperclip landing page.
