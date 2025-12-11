@@ -5,7 +5,7 @@ from supermemory import Supermemory
 
 # Initialize the Supermemory client
 # This assumes the SUPERMEMORY_API_KEY is set in your .env file
-supermemory_client = Supermemory(api_key="sm_qaJzZjFNjd7R6AajEnxgzW_XsYEdDMtGKhKlkAkvSwyhyfPyrjWFviOkqEtzXKbctVpjtZAVWUouqqcwTWwIHiq")
+supermemory_client = Supermemory(api_key="API_KEY")
 
 # Create a router to organize these endpoints
 router = APIRouter()
@@ -66,4 +66,5 @@ async def login(request: AuthRequest):
         )
     
     # If the user exists, the login is successful
+
     return {"status": "success", "user_id": request.user_id}
