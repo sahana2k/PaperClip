@@ -298,7 +298,8 @@ MIT License - See LICENSE file for details
 ## 👨‍💼 Author
 
 **Manav Patel**
-- GitHub: [@Manavpatel06](https://github.com/Manavpatel06)
+- GitHub: 
+[@Sahana2k](https://github.com/sahana2k)
 
 ---
 
