@@ -297,7 +297,7 @@ MIT License - See LICENSE file for details
 
 ## 👨‍💼 Author
 
-**Manav Patel**
+**Sahana Jayasimha Holkal**
 - GitHub: 
 [@Sahana2k](https://github.com/sahana2k)
 
