@@ -1,0 +1,202 @@
+.desktop {
+  position: absolute;
+  inset: 0;
+  background: #e8dfcf; /* Reverted to Beige */
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 2.5rem 2rem 4.5rem;
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+.desktop::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 0);
+  background-size: 12px 12px;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.desktop-icons {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(auto-fill, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fill, 100px);
+  gap: 1.5rem;
+  width: auto;
+  height: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.desktop-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.4rem;
+  background: transparent;
+  border: none;
+  color: #1b1b1b; /* Reverted to dark text */
+  width: 80px;
+  cursor: pointer;
+  padding: 8px;
+  transition: all 0.1s ease;
+}
+
+.desktop-icon:hover {
+  transform: translateY(-2px);
+}
+
+.desktop-icon:hover .icon-box {
+  transform: scale(1.05);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.15);
+  background: #dcdcdc;
+}
+
+.desktop-icon:active .icon-box {
+  background: #a0a0a0;
+  border-top-color: #808080;
+  border-left-color: #808080;
+  border-bottom-color: #ffffff;
+  border-right-color: #ffffff;
+  transform: translateY(1px);
+}
+
+.icon-box {
+  width: 42px;
+  height: 42px;
+  background: #c0c0c0;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-bottom: 2px solid #808080;
+  border-right: 2px solid #808080;
+  display: grid;
+  place-items: center;
+  position: relative;
+  transition: all 0.1s ease;
+}
+
+.icon-inner {
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+}
+
+.icon-label {
+  font-family: var(--font-sans);
+  font-size: 0.9rem; /* Increased icon label font size */
+  text-align: center;
+  padding: 1px 4px;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+/* Feature Specific Themed Colors */
+.icon-research .icon-inner { color: #0000bb; }
+.icon-projects .icon-inner { color: #808000; }
+.icon-tools .icon-inner { color: #333333; }
+.icon-chat .icon-inner { color: #008000; }
+.icon-stats .icon-inner { color: #bb0000; }
+.icon-help .icon-inner { color: #000000; }
+
+.desktop-watermark {
+  position: absolute;
+  top: 2.5rem;
+  right: 2.5rem;
+  text-align: right;
+  z-index: 1;
+}
+
+.watermark-title {
+  font-family: var(--font-pixel);
+  font-size: 2.2rem;
+  color: #9a9a9a;
+  letter-spacing: 2px;
+}
+
+.watermark-subtitle {
+  font-family: var(--font-pixel);
+  font-size: 0.7rem;
+  color: #a8a8a8;
+  margin-top: 0.4rem;
+}
+
+.system-panel {
+  position: absolute;
+  bottom: 5.5rem;
+  right: 2rem;
+  width: 260px;
+  background: #f8f3e6;
+  border: 2px solid #1b1b1b;
+  box-shadow: 4px 4px 0 #1c1c1c;
+  padding: 0.75rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  z-index: 1;
+}
+
+.panel-title {
+  font-family: var(--font-pixel);
+  font-size: 0.65rem;
+  margin-bottom: 0.4rem;
+  color: #d67a2f;
+}
+
+.panel-status {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.6rem;
+}
+
+.status-pill {
+  background: #1f9d55;
+  color: white;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid #1b1b1b;
+}
+
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.file-row:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.file-icon {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+}
+
+
+@media (max-width: 900px) {
+  .desktop {
+    padding: 1.8rem 1.2rem 3.5rem;
+  }
+
+  .desktop-icons {
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: auto;
+  }
+
+  .desktop-watermark {
+    position: static;
+    margin-top: 1.5rem;
+    text-align: left;
+  }
+
+  .system-panel {
+    position: static;
+    margin-top: 1.5rem;
+  }
+}

@@ -2,32 +2,62 @@
 import os
 import re
 import arxiv
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
+from typing import Optional
 from github import Github, Auth
 from huggingface_hub import HfApi, hf_hub_download
 from langchain_core.tools import tool
-from langchain_google_genai import ChatGoogleGenerativeAI
 from pydantic import BaseModel, Field
-from semanticscholar import SemanticScholar
-from langchain_cohere import ChatCohere
+from langchain_groq import ChatGroq
+from app.core import settings, get_logger
+from app.core.exceptions import ConfigurationError
+
+logger = get_logger(__name__)
+
+DEFAULT_LLM_TIMEOUT = int(os.getenv("LLM_TIMEOUT_SECONDS", "25"))
+
+
+def safe_invoke(prompt: str, timeout_seconds: Optional[int] = None):
+    timeout = timeout_seconds or DEFAULT_LLM_TIMEOUT
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(llm.invoke, prompt)
+        try:
+            return future.result(timeout=timeout)
+        except FutureTimeoutError as exc:
+            future.cancel()
+            raise TimeoutError(f"LLM request exceeded {timeout} seconds") from exc
+        except Exception as exc:
+            if exc.__class__.__name__ in {"ReadTimeout", "TimeoutException"}:
+                raise TimeoutError("LLM provider read timeout") from exc
+            raise
+
 # --- INITIALIZATION ---
-# Use Gemini for all tool-internal LLM tasks
-llm = ChatCohere(
-    model="command-a-03-2025",
-    temperature=0,
-    cohere_api_key="cohere_api_key"
-)
-s2 = SemanticScholar()
+try:
+    llm = ChatGroq(
+        model="llama-3.3-70b-versatile",
+        temperature=0,
+        max_tokens=512,
+        timeout=10.0,
+        groq_api_key=settings.groq_api_key
+    )
+    logger.info("✅ Groq LLM initialized (llama-3.3-70b-versatile)")
+except Exception as e:
+    logger.error(f"Failed to initialize Groq: {e}")
+    raise ConfigurationError("Groq API configuration failed")
+
 hf_api = HfApi()
 
-# Check for and initialize the GitHub client
-github_token = "GITHUB_TOKEN-"
-if not github_token:
-    raise ValueError(
-        "GITHUB_TOKEN not found in environment variables. "
-        "Please ensure it is set in your .env file."
-    )
-github_auth = Auth.Token(github_token)
-g = Github(auth=github_auth)
+# Check for and initialize the GitHub client (optional)
+g = None
+if settings.github_token:
+    try:
+        github_auth = Auth.Token(settings.github_token)
+        g = Github(auth=github_auth)
+        logger.info("✅ GitHub client initialized")
+    except Exception as e:
+        logger.warning(f"GitHub client not initialized (continuing without GitHub): {e}")
+else:
+    logger.warning("GitHub token not set; code search features will be limited.")
 
 # --- DYNAMIC TOOLS ---
 
@@ -35,19 +65,34 @@ g = Github(auth=github_auth)
 def domain_discovery_tool(topic: str) -> str:
     """Finds and suggests specific subfields for a broad research topic."""
     prompt = f"What are the key subfields and emerging areas within the research domain of '{topic}'? Provide a concise list of 3-4 options."
-    response = llm.invoke(prompt)
+    response = safe_invoke(prompt)
     return response.content
 
 @tool
-def paper_summarizer_tool(query: str) -> str:
-    """Searches for and summarizes recent research papers from ArXiv based on a query."""
-    # This tool's code remains the same as before
+def paper_summarizer_tool(topic: str) -> str:
+    """Searches for and summarizes recent research papers from ArXiv based on a topic."""
+    query = topic
     search = arxiv.Search(query=query, max_results=3, sort_by=arxiv.SortCriterion.Relevance)
-    # ... (rest of the logic is identical to the previous version)
     results = list(search.results())
-    if not results: return "No papers found."
-    summaries = [f"Title: {r.title}\nURL: {r.pdf_url}\nSummary: {llm.invoke(f'Summarize this abstract in 3 sentences: {r.summary}').content}\n---" for r in results]
-    return "\n".join(summaries)
+    if not results:
+        return "No papers found."
+    paper_blocks = []
+    for idx, r in enumerate(results, start=1):
+        paper_blocks.append(
+            f"[{idx}] Title: {r.title}\nURL: {r.pdf_url}\nAbstract: {r.summary}"
+        )
+    prompt = (
+        "Summarize each paper in 2-3 sentences."
+        " Use the exact format:\n"
+        "Title: <title>\nURL: <url>\nSummary: <summary>\n---\n"
+        "Do not add extra commentary.\n\n"
+        "Papers:\n" + "\n\n".join(paper_blocks)
+    )
+    try:
+        response = safe_invoke(prompt).content
+    except TimeoutError as exc:
+        return f"Timed out while summarizing papers: {exc}"
+    return response
 
 
 @tool
@@ -57,48 +102,13 @@ def professor_finder_tool(topic: str, university: str) -> str:
     by first finding relevant papers and then checking the authors' affiliations.
     """
     try:
-        # Step 1: Search for papers related to the topic.
-        papers = s2.search_paper(topic, limit=20)
-        
-        found_professors = {} # Use a dict to store unique professors by their ID
-
-        # Step 2: Iterate through the papers and their authors.
-        for paper in papers:
-            for author in paper.authors:
-                # Step 3: Check if the author has affiliations listed.
-                if author.affiliations:
-                    # Step 4: Check if any affiliation matches the target university.
-                    if any(university.lower() in aff.lower() for aff in author.affiliations):
-                        # Add the professor to our dictionary to avoid duplicates.
-                        if author.authorId and author.authorId not in found_professors:
-                            # Fetch more details to get a homepage URL if available
-                            detailed_author = s2.get_author(author.authorId)
-                            found_professors[author.authorId] = {
-                                "name": detailed_author.name,
-                                "affiliation": detailed_author.affiliations[0] if detailed_author.affiliations else "N/A",
-                                "homepage": detailed_author.url,
-                                "paper_count": detailed_author.paperCount,
-                                "h_index": detailed_author.hIndex
-                            }
-            
-            # Stop once we have a few good results.
-            if len(found_professors) >= 3:
-                break
-        
-        if not found_professors:
-            return f"Could not find any professors at {university} who have recently published on '{topic}'."
-
-        # Step 5: Format the results for display.
-        response_lines = ["Found these actively publishing researchers:\n"]
-        for prof in found_professors.values():
-            response_lines.append(
-                f"**Name:** {prof['name']} (h-index: {prof['h_index']})\n"
-                f"**Affiliation:** {prof['affiliation']}\n"
-                f"**Homepage:** {prof['homepage']}\n---"
-            )
-        
-        return "\n".join(response_lines)
-
+        # Fallback heuristic without Semantic Scholar: generate guided search queries
+        prompt = (
+            "List 3-5 professors at the university working on the topic. Provide name, department, homepage (if known),"
+            " and a recent paper title. Prefer official lab/edu pages; avoid fabrication."
+            f" Topic: {topic}\nUniversity: {university}"
+        )
+        return safe_invoke(prompt).content
     except Exception as e:
         return f"An error occurred while searching for professors: {e}"
 
@@ -108,7 +118,7 @@ def dataset_hub_tool(topic: str) -> str:
     Finds relevant datasets for a given topic, leveraging Cohere's knowledge and web search.
     """
     prompt = f"Find and describe 3 relevant, publicly available datasets for the research topic: '{topic}'. Include links to where they can be found. Prioritize datasets commonly used in academic research."
-    response = llm.invoke(prompt)
+    response = safe_invoke(prompt)
     return response.content
 
 @tool
@@ -117,7 +127,7 @@ def pretrained_model_tool(topic: str) -> str:
     Finds pretrained models for a given topic from web, Cohere, and GitHub sources.
     """
     prompt = f"Search the web to find 3 popular pretrained models for '{topic}'. For each, provide its name, a brief description, and a link to its source (e.g., GitHub, Hugging Face, TensorFlow Hub)."
-    response = llm.invoke(prompt)
+    response = safe_invoke(prompt)
     return response.content
 
 @tool
@@ -131,7 +141,7 @@ def generate_code_tool(topic: str, model_name: str) -> str:
     3. Example code to load a pretrained model similar to '{model_name}'.
     4. A simple inference or processing example with comments.
     """
-    code = llm.invoke(prompt).content
+    code = safe_invoke(prompt).content
     return f"Here is a starter Colab notebook for your project on {topic}:\n\n{code}"
 
 

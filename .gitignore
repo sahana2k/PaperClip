@@ -1,0 +1,112 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.project
+.pydevproject
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# Environment
+.env
+.env.local
+.env.*.local
+.env.prod
+.env.staging
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+paperclip.db
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# Uploads
+uploads/
+*.tmp
+
+# OS
+Thumbs.db
+.DS_Store
+*.swp
+*.swo
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.hypothesis/
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# IDE specific
+.venv
+venv/
+env/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Node modules (if using npm)
+node_modules/
+package-lock.json
+npm-debug.log
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Miscellaneous
+*.bak
+*.orig
+.cache/
+.pytest_cache/
+node_modules/
+frontend/node_modules/
